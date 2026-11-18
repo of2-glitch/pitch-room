@@ -139,6 +139,7 @@ export function questionPrompt(t: Ticker, q: Quote, headline: string): ChatMessa
       content:
         'You write one short question for a finance interview practice game. ' +
         'Use the real numbers given. Ask the player to pitch, pass on, or explain the move in a few sentences. ' +
+        'Use the headline only if it could plausibly move the stock (earnings, guidance, products, deals, regulation, management); otherwise ignore it. ' +
         'Max 40 words. No preamble, no answer, plain text only.',
     },
     {

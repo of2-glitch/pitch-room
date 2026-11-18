@@ -28,6 +28,17 @@ import {
   type RoundResult,
 } from '../game/logic'
 
+/**
+ * Business and markets outlets only. Without this, NewsAPI happily returns
+ * coupon and deal posts ("Sunscreen 2-pack at Costco $8"), which make bad
+ * interview questions. Found in the first live test.
+ */
+const NEWS_DOMAINS = [
+  'reuters.com', 'cnbc.com', 'wsj.com', 'bloomberg.com', 'ft.com', 'marketwatch.com',
+  'barrons.com', 'finance.yahoo.com', 'businessinsider.com', 'apnews.com', 'fortune.com',
+  'forbes.com', 'investors.com', 'fool.com', 'seekingalpha.com', 'theverge.com', 'techcrunch.com',
+].join(',')
+
 /** Cheap, fast model with standard pricing in the DeepSpace catalog. */
 const MODEL = 'gpt-4o-mini'
 
@@ -106,6 +117,7 @@ const startRound: ActionHandler<Env> = async (ctx) => {
   const from = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10)
   const newsRes = await ctx.tools.integration('newsapi/search-everything', {
     q: `"${ticker.company}"`,
+    domains: NEWS_DOMAINS,
     from,
     language: 'en',
     sortBy: 'publishedAt',
