@@ -109,9 +109,9 @@ const startRound: ActionHandler<Env> = async (ctx) => {
     from,
     language: 'en',
     sortBy: 'publishedAt',
-    pageSize: 5,
+    pageSize: 20,
   })
-  const headline = newsRes.success ? pickHeadline(newsRes.data) : ''
+  const headline = newsRes.success ? pickHeadline(newsRes.data, ticker) : ''
 
   // 3. The question. Fall back to a template so a model hiccup can't block play.
   const qRes = await ctx.tools.integration('openai/chat-completion', {

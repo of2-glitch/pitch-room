@@ -6,6 +6,8 @@
 export interface Ticker {
   symbol: string
   company: string
+  /** Other names headlines use for the company (Alphabet is usually "Google"). */
+  aliases?: string[]
 }
 
 /** Large, liquid names people actually get asked about in interviews. */
@@ -14,21 +16,21 @@ export const TICKERS: Ticker[] = [
   { symbol: 'MSFT', company: 'Microsoft' },
   { symbol: 'NVDA', company: 'Nvidia' },
   { symbol: 'AMZN', company: 'Amazon' },
-  { symbol: 'GOOGL', company: 'Alphabet' },
-  { symbol: 'META', company: 'Meta Platforms' },
+  { symbol: 'GOOGL', company: 'Alphabet', aliases: ['Google'] },
+  { symbol: 'META', company: 'Meta Platforms', aliases: ['Meta'] },
   { symbol: 'TSLA', company: 'Tesla' },
-  { symbol: 'JPM', company: 'JPMorgan Chase' },
+  { symbol: 'JPM', company: 'JPMorgan Chase', aliases: ['JPMorgan'] },
   { symbol: 'GS', company: 'Goldman Sachs' },
-  { symbol: 'BRK.B', company: 'Berkshire Hathaway' },
+  { symbol: 'BRK.B', company: 'Berkshire Hathaway', aliases: ['Berkshire', 'Buffett'] },
   { symbol: 'V', company: 'Visa' },
   { symbol: 'WMT', company: 'Walmart' },
   { symbol: 'COST', company: 'Costco' },
   { symbol: 'KO', company: 'Coca-Cola' },
   { symbol: 'NKE', company: 'Nike' },
   { symbol: 'DIS', company: 'Disney' },
-  { symbol: 'LLY', company: 'Eli Lilly' },
+  { symbol: 'LLY', company: 'Eli Lilly', aliases: ['Lilly'] },
   { symbol: 'PFE', company: 'Pfizer' },
-  { symbol: 'XOM', company: 'Exxon Mobil' },
+  { symbol: 'XOM', company: 'Exxon Mobil', aliases: ['Exxon'] },
   { symbol: 'BA', company: 'Boeing' },
   { symbol: 'LMT', company: 'Lockheed Martin' },
   { symbol: 'UBER', company: 'Uber' },
@@ -91,13 +93,37 @@ export function parseQuote(body: unknown): Quote | null {
   return { price, changePct: Math.round(changePct * 100) / 100 }
 }
 
-/** First usable headline from newsapi/search-everything, or ''. */
-export function pickHeadline(body: unknown): string {
+/** Strip the " - Source" tail NewsAPI puts on titles. */
+function cleanTitle(title: string): string {
+  return title.replace(/\s+[-|]\s+[^-|]{2,40}$/, '').replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Pick one headline from newsapi/search-everything that is actually about the
+ * company: its title must mention the company name, an alias, or the ticker.
+ * Uses `articles[].title` (clean) rather than the pre-formatted `headlines`
+ * strings, which carry numbering, source and a snippet. Returns '' if none fit.
+ */
+export function pickHeadline(body: unknown, ticker?: Ticker): string {
   if (!body || typeof body !== 'object') return ''
-  const headlines = (body as { headlines?: unknown }).headlines
-  if (!Array.isArray(headlines)) return ''
-  const first = headlines.find((h): h is string => typeof h === 'string' && h.trim().length > 0)
-  return first ? first.trim().slice(0, 240) : ''
+  const o = body as { articles?: unknown; headlines?: unknown }
+  const titles: string[] = []
+  if (Array.isArray(o.articles)) {
+    for (const a of o.articles) {
+      const t = (a as { title?: unknown } | null)?.title
+      if (typeof t === 'string' && t.trim() && t !== '[Removed]') titles.push(cleanTitle(t))
+    }
+  }
+  if (titles.length === 0 && Array.isArray(o.headlines)) {
+    for (const h of o.headlines) {
+      if (typeof h === 'string' && h.trim()) titles.push(cleanTitle(h.replace(/^\s*\d+\.\s*/, '').split(' | ')[0]))
+    }
+  }
+  const names = ticker
+    ? [ticker.company.split(' ')[0], ...(ticker.aliases ?? []), ticker.symbol].map((n) => n.toLowerCase())
+    : []
+  const relevant = titles.find((t) => names.length === 0 || names.some((n) => t.toLowerCase().includes(n)))
+  return relevant ? relevant.slice(0, 200) : ''
 }
 
 export interface ChatMessage {

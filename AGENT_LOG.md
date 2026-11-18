@@ -18,3 +18,9 @@ How the coding agent (Claude) was directed and what was checked. Owen: add your 
 - [ ] Non-host can't see Start/Grade buttons, and calling the action directly is refused
 - [ ] A player's answer isn't visible to others until grading
 - [ ] Play a real game with 3+ people on phones; note what confused them
+
+## 2026-11-18: first live test
+
+- Deployed to https://pitch-room.app.space. First round worked end to end: live GOOGL quote, a headline, AI question.
+- Problem spotted in the live round: the headline was off-topic (an Uber/Zipline story for Alphabet) and messy (NewsAPI's pre-formatted `headlines` strings include numbering, source, and a snippet).
+- Fix: `pickHeadline` now reads clean `articles[].title`, strips the " - Source" suffix, and only keeps a headline that mentions the company, an alias (Alphabet -> Google), or the ticker. Otherwise the round runs with no headline. Pulls 20 articles instead of 5 to find a relevant one. 3 new tests (17 total).

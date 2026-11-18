@@ -69,3 +69,23 @@ describe('helpers', () => {
     expect(parseResults('not json')).toEqual([])
   })
 })
+
+describe('pickHeadline relevance', () => {
+  const googl = TICKERS.find((t) => t.symbol === 'GOOGL')!
+  it('skips off-topic stories and cleans the source suffix', () => {
+    const body = {
+      headlines: ['1. Uber drones take off | TechCrunch - TechCrunch (11/17): ...'],
+      articles: [
+        { title: 'Uber and Zipline drone delivery takes off in Texas - TechCrunch' },
+        { title: 'Google unveils new Gemini model for search - The Verge' },
+      ],
+    }
+    expect(pickHeadline(body, googl)).toBe('Google unveils new Gemini model for search')
+  })
+  it('returns empty when nothing mentions the company', () => {
+    expect(pickHeadline({ articles: [{ title: 'Uber drones - TechCrunch' }], headlines: [] }, googl)).toBe('')
+  })
+  it('falls back to cleaned headline strings when articles are missing', () => {
+    expect(pickHeadline({ headlines: ['1. Google earnings beat | Reuters - Reuters (11/17): text'] }, googl)).toBe('Google earnings beat')
+  })
+})
